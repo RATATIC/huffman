@@ -16,7 +16,7 @@
 * with ITS Partner.
 */
 
-#include "head_coder.h"
+#include "head_decode.h"
 
 void decode (char* str, char* result) {
 
