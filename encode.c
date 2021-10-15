@@ -16,6 +16,8 @@
 * with ITS Partner.
 */
 
+#define _GNU_SOURCE
+
 #include "head_encode.h"
 
 struct List_node {
@@ -41,35 +43,91 @@ void encode (char* str, char* result) {
 		printf ("%c - %d \n", pl->c, pl->count);
 		pl = pl->next;
 	}
-	struct List_node* tree = make_tree (list);
-
-	pl = list;
 	int size_char_code = 0;
+	pl = list;
 
 	while (pl != NULL) {
 		size_char_code++;
 		pl = pl->next;
 	}
-	struct char_code* top = creating_char_code (list, size_char_code);
+	struct List_node** cpy_list = (struct List_node**)malloc (sizeof (struct List_node*) * size_char_code);
+
+	pl = list;
+	for (int i = 0; i < size_char_code; i++) {
+		cpy_list[i] = pl;
+		pl = pl->next; 
+	}
+	struct List_node* tree = make_tree (list);
+	struct char_code* str_code = creating_char_code (cpy_list, size_char_code);
+
+	for (int i = 0; i < size_char_code; i++) {
+		printf ("%s", str_code[i].code);
+	}
 
 	free_list (&list);
 }
 
-struct char_code* creating_char_code (struct List_node* list, int size) {
-
+struct char_code* creating_char_code (struct List_node** cpy_list, int size_char_code) {
+	struct char_code* tmp = (struct char_code*)malloc (sizeof (struct char_code) * size_char_code);
+	for (int i = 0; i < size_char_code; i++) {
+		tmp[i].c = cpy_list[i]->c;
+		
+		while (cpy_list[i] != NULL) {
+			if (cpy_list[i]->next->left == cpy_list[i]) {
+				asprintf (&tmp[i].code, "%s%c", tmp[i].code,'0');
+			}
+			else {
+				asprintf (&tmp[i].code, "%s%c", tmp[i].code,'1');
+			}
+			cpy_list[i] = cpy_list[i]->next;
+		}
+	}
+	return tmp;
 }
 
 struct List_node* make_tree (struct List_node* list) {
 	struct List_node* tmp = NULL;
 	struct List_node* first_small_node = NULL;
 	struct List_node* second_small_node = NULL;
-	
 	while(list->next != NULL) {
 		find_two_small_nodes (list, &first_small_node, &second_small_node);
-		tmp = creating_union_of_two_small_nodes (list, first_small_node, second_small_node);
+
+		printf ("%c  %c\n", first_small_node->c, second_small_node->c);
+
+		if (first_small_node != list && second_small_node != list)
+			tmp = creating_union_of_two_small_nodes (list, first_small_node, second_small_node);
+		else 
+			if (first_small_node == list)
+				tmp = change_top_and_creating_union (&list, first_small_node, second_small_node);
+			else 
+				tmp = change_top_and_creating_union (&list, second_small_node, first_small_node);
 	}
 
 	return tmp;
+}
+
+struct List_node* change_top_and_creating_union (struct List_node** list, struct List_node* right, struct List_node* left) {
+	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
+
+	if (tmp == NULL) {
+		puts ("Failed alloc memory for tmp in creating_union_of_two_small_nodes");
+		exit(EXIT_FAILURE);
+	}
+	tmp->c = '1';
+	tmp->count = right->count + left->count;
+	tmp->right = right;
+	tmp->left = left;
+	if (right->next->next != NULL)
+		tmp->next = right->next;
+	else
+		tmp->next = NULL;
+
+	struct List_node* tmp2 = (*list);
+	while (tmp2->next == left) 
+		tmp2 = tmp2 -> next;
+	tmp2->next = left->next;
+
+	(*list) = tmp;
 }
 
 struct List_node* creating_union_of_two_small_nodes (struct List_node* list, struct List_node* right, struct List_node* left) {
@@ -79,7 +137,7 @@ struct List_node* creating_union_of_two_small_nodes (struct List_node* list, str
 		puts ("Failed alloc memory for tmp in creating_union_of_two_small_nodes");
 		exit(EXIT_FAILURE);
 	}
-	tmp->c = '\0';
+	tmp->c = '1';
 	tmp->count = right->count + left->count;
 	tmp->right = right;
 	tmp->left = left;
@@ -103,19 +161,28 @@ struct List_node* creating_union_of_two_small_nodes (struct List_node* list, str
 
 void find_two_small_nodes (struct List_node* list, struct List_node** first_small_node, struct List_node** second_small_node) {
 	struct List_node* tmp = list;
-
 	(*first_small_node) = list;
-	(*second_small_node) = list->next;
 
 	while (tmp != NULL) {
-		if ((*first_small_node)->count < tmp->count) {
+		if ((*first_small_node)->count > tmp->count) {
 			(*first_small_node) = tmp;
 		}
 		tmp = tmp->next;
 	}
+	tmp = list;
+	while (tmp != NULL) {
+		printf ("%c - %d \n", tmp->c, tmp->count);
+		tmp = tmp->next;
+	}
+	puts ("=======================================================");
+	
+	if ((*first_small_node) != list)
+		(*second_small_node) = list;
+	else
+		(*second_small_node) = list->next;
 
 	while (list != NULL) {
-		if ((*second_small_node)->count < list->count && list != (*first_small_node)) {
+		if ((*second_small_node)->count > list->count && list != (*first_small_node)) {
 			(*second_small_node) = list;
 		}
 		list = list->next;

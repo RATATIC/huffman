@@ -18,4 +18,6 @@ void find_two_small_nodes (struct List_node* list, struct List_node** first_smal
 
 struct List_node* creating_union_of_two_small_nodes (struct List_node* list, struct List_node* right, struct List_node* left);
 
-struct char_code* creating_char_code (struct List_node* list, int size);
+struct char_code* creating_char_code (struct List_node** cpy_list, int size);
+
+struct List_node* change_top_and_creating_union (struct List_node** list, struct List_node* first_small_node, struct List_node* second_small_node);
