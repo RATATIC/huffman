@@ -25,6 +25,7 @@ struct List_node {
 	int count;
 
 	struct List_node* next;
+
 	struct List_node* right;
 	struct List_node* left;
 };
@@ -34,25 +35,23 @@ struct char_code {
 	char c;
 };
 
-void encode (char* str, char* result) {
+char* encode (char* str, char* result) {
 	struct List_node* list = char_counting (str);
-
 	struct List_node* pl = list;
 
-	while (pl != NULL) {
-		printf ("%c - %d \n", pl->c, pl->count);
-		pl = pl->next;
-	}
 	int size_char_code = 0;
-	pl = list;
-
 	while (pl != NULL) {
 		size_char_code++;
 		pl = pl->next;
 	}
 	struct List_node** cpy_list = (struct List_node**)malloc (sizeof (struct List_node*) * size_char_code);
-
+	
+	if (cpy_list == NULL) {
+		puts ("Failed alloc memory");
+		exit (EXIT_FAILURE);
+	}
 	pl = list;
+	
 	for (int i = 0; i < size_char_code; i++) {
 		cpy_list[i] = pl;
 		pl = pl->next; 
@@ -61,23 +60,60 @@ void encode (char* str, char* result) {
 	struct char_code* str_code = creating_char_code (cpy_list, size_char_code);
 
 	for (int i = 0; i < size_char_code; i++) {
-		printf ("%s", str_code[i].code);
+		printf ("%c - %s\n", str_code[i].c, str_code[i].code);
 	}
 
-	free_list (&list);
+	wrie_in_char_code (str_code, size_char_code);
+
+	for (int i = 0; i < strlen (str); i++) {
+		for (int j = 0; j < size_char_code; j++) {
+			if (str[i] == str_code[j].c) {
+				asprintf (&result, "%s%s", result, str_code[j].code);
+			}
+		}
+	}
+	free_tree (&tree);
+	free_char_code (str_code, size_char_code);
+	free (cpy_list);
+
+	return result;
 }
 
+// write code of char in file
+void wrie_in_char_code (struct char_code* str_code, int size_char_code) {
+	FILE* fp;
+
+	if ((fp = fopen ("code.txt", "w")) == NULL) {
+		puts ("Failed open code.txt");
+		exit (EXIT_FAILURE);
+	}
+
+	for (int i = 0; i < size_char_code; i++)
+		fprintf(fp, "%c - %s\n", str_code[i].c, str_code[i].code);
+
+	if (fclose (fp)) {
+		puts ("Failed close file");
+		exit (EXIT_FAILURE);
+	}
+}
+
+// create char_code 
 struct char_code* creating_char_code (struct List_node** cpy_list, int size_char_code) {
 	struct char_code* tmp = (struct char_code*)malloc (sizeof (struct char_code) * size_char_code);
+	
+	if (tmp == NULL) {
+		puts ("Failed alloc memory char_code");
+		exit (EXIT_FAILURE);
+	}
 	for (int i = 0; i < size_char_code; i++) {
 		tmp[i].c = cpy_list[i]->c;
-		
-		while (cpy_list[i] != NULL) {
+		tmp[i].code = "\0";
+		while (cpy_list[i]->next != NULL) {
 			if (cpy_list[i]->next->left == cpy_list[i]) {
-				asprintf (&tmp[i].code, "%s%c", tmp[i].code,'0');
+				asprintf (&tmp[i].code, "%c%s", '0', tmp[i].code);
 			}
 			else {
-				asprintf (&tmp[i].code, "%s%c", tmp[i].code,'1');
+				asprintf (&tmp[i].code, "%c%s", '1', tmp[i].code);
 			}
 			cpy_list[i] = cpy_list[i]->next;
 		}
@@ -85,29 +121,27 @@ struct char_code* creating_char_code (struct List_node** cpy_list, int size_char
 	return tmp;
 }
 
+// create code tree 
 struct List_node* make_tree (struct List_node* list) {
 	struct List_node* tmp = NULL;
 	struct List_node* first_small_node = NULL;
 	struct List_node* second_small_node = NULL;
+
 	while(list->next != NULL) {
 		find_two_small_nodes (list, &first_small_node, &second_small_node);
-
-		printf ("%c  %c\n", first_small_node->c, second_small_node->c);
 
 		if (first_small_node != list && second_small_node != list)
 			tmp = creating_union_of_two_small_nodes (list, first_small_node, second_small_node);
 		else 
-			if (first_small_node == list)
-				tmp = change_top_and_creating_union (&list, first_small_node, second_small_node);
-			else 
-				tmp = change_top_and_creating_union (&list, second_small_node, first_small_node);
+			tmp = change_top_and_creating_union (&list, first_small_node, second_small_node);
 	}
-
 	return tmp;
 }
 
+// create new node which one top
 struct List_node* change_top_and_creating_union (struct List_node** list, struct List_node* right, struct List_node* left) {
 	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
+	struct List_node* tmp2 = (*list);
 
 	if (tmp == NULL) {
 		puts ("Failed alloc memory for tmp in creating_union_of_two_small_nodes");
@@ -117,19 +151,30 @@ struct List_node* change_top_and_creating_union (struct List_node** list, struct
 	tmp->count = right->count + left->count;
 	tmp->right = right;
 	tmp->left = left;
-	if (right->next->next != NULL)
+
+	if (right == (*list)) {
+		while (tmp2->next != left)
+			tmp2 = tmp2->next;
+		tmp2->next = left->next;
+
 		tmp->next = right->next;
-	else
-		tmp->next = NULL;
-
-	struct List_node* tmp2 = (*list);
-	while (tmp2->next == left) 
-		tmp2 = tmp2 -> next;
-	tmp2->next = left->next;
-
+	}
+	else {
+		while (tmp2->next != right)
+			tmp2 = tmp2->next;
+		tmp2->next = right->next;
+		
+		tmp->next = left->next;
+	}	
 	(*list) = tmp;
+
+	left->next = tmp;
+	right->next = tmp;
+	
+	return tmp;
 }
 
+// create new node which is the union of the two smallest nodes
 struct List_node* creating_union_of_two_small_nodes (struct List_node* list, struct List_node* right, struct List_node* left) {
 	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
 
@@ -159,6 +204,7 @@ struct List_node* creating_union_of_two_small_nodes (struct List_node* list, str
 	return tmp;
 }
 
+// find the two smallest nodes in list
 void find_two_small_nodes (struct List_node* list, struct List_node** first_small_node, struct List_node** second_small_node) {
 	struct List_node* tmp = list;
 	(*first_small_node) = list;
@@ -169,13 +215,7 @@ void find_two_small_nodes (struct List_node* list, struct List_node** first_smal
 		}
 		tmp = tmp->next;
 	}
-	tmp = list;
-	while (tmp != NULL) {
-		printf ("%c - %d \n", tmp->c, tmp->count);
-		tmp = tmp->next;
-	}
-	puts ("=======================================================");
-	
+
 	if ((*first_small_node) != list)
 		(*second_small_node) = list;
 	else
@@ -189,6 +229,7 @@ void find_two_small_nodes (struct List_node* list, struct List_node** first_smal
 	}
 }
 
+// create List_node list of char from str with their count 
 struct List_node* char_counting (char* str) {
 	struct List_node* list = NULL;
 
@@ -202,7 +243,7 @@ struct List_node* char_counting (char* str) {
 	}
 	return list;
 }
-
+// add in list new node
 void add_list_node (struct List_node* list, char c) {
 	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
 
@@ -222,8 +263,9 @@ void add_list_node (struct List_node* list, char c) {
 	list->next = tmp;
 }
 
- struct List_node* creating_list (char c) {
- 	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
+// create top of list
+struct List_node* creating_list (char c) {
+	struct List_node* tmp = (struct List_node*)malloc (sizeof (struct List_node));
 	
 	if (tmp == NULL) {
 		puts ("Failed alloc memory");
@@ -238,6 +280,7 @@ void add_list_node (struct List_node* list, char c) {
 	return tmp;
 }
 
+// find char in list and increment count in node
 int find_char (struct List_node* list, char c) {
 	while (list != NULL) {
 		if (list->c == c) {
@@ -249,12 +292,16 @@ int find_char (struct List_node* list, char c) {
 	return 1;
 }
 
-void free_list (struct List_node** list) {
-	struct List_node* pl;
+void free_tree (struct List_node** tree) {
+	if ((*tree)->right != NULL)
+		free_tree (&((*tree)->right));
+	if ((*tree)->left != NULL)
+		free_tree (&((*tree)->left));
+	free ((*tree));
+}
 
-	while ((*list) != NULL) {
-		pl = *list;
-		*list = (*list)->next;
-		free(pl);
-	}
+void free_char_code(struct char_code* str_code, int size_char_code) {
+	for (int i = 0 ; i < size_char_code; i++)
+		free(str_code[i].code);
+	free (str_code);
 }

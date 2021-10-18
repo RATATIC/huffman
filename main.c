@@ -18,12 +18,12 @@
 
 #include "head.h"
 
-#define READING_SIZE 10
+#define READING_SIZE 1024
 
 int main (int argc, char** argv) {
-	char* path_in = "input.txt";
-	char* path_out = "output.txt";
-	char* decode_or_encode = "encode";
+	char* path_in = "input1.txt";
+	char* path_out = "output1.txt";
+	char* decode_or_encode = "decode";
 
 	if (argc > 1){
 		if (argc > 2) 
@@ -58,14 +58,13 @@ int main (int argc, char** argv) {
 	}
 	puts (str);
 	char* code_str = huffman (str, decode_or_encode);
-	free (str);
 
 	if ((fp = fopen (path_out, "w+")) == NULL) {
 		puts ("Failed open output file");
 		exit (EXIT_FAILURE);
 	}
 	
-	if (fprintf(fp, "%s", str) == EOF) {
+	if (fprintf(fp, "%s", code_str) == EOF) {
 		puts ("Failed print in output file");
 		exit (EXIT_FAILURE);
 	} 
@@ -73,13 +72,15 @@ int main (int argc, char** argv) {
 	if (fclose (fp)) {
 		puts ("Failed close output file");
 	}
+	free (str);
+	free (code_str);
 }
 
 char* huffman (char* str, char* decode_or_encode) {
-	char* result = "0";
+	char* result = "\0";
 
 	if (strcmp (decode_or_encode, "encode") == 0) {
-		encode (str, result);
+		result = encode (str, result);
 	}
 	else {
 		decode (str, result);
