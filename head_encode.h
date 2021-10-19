@@ -34,4 +34,4 @@ void free_tree (struct List_node** tree);
 void free_char_code(struct char_code* str_code, int size_char_code);
 
 // write code of char in file
-void wrie_in_char_code (struct char_code* str_code, int size_char_code);
+void write_in_char_code (struct char_code* str_code, int size_char_code, int string_size);

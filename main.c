@@ -21,9 +21,9 @@
 #define READING_SIZE 1024
 
 int main (int argc, char** argv) {
-	char* path_in = "input1.txt";
-	char* path_out = "output1.txt";
-	char* decode_or_encode = "decode";
+	char* path_in = "input.txt";
+	char* path_out = "output.txt";
+	char* decode_or_encode = "encode";
 
 	if (argc > 1){
 		if (argc > 2) 
@@ -56,7 +56,7 @@ int main (int argc, char** argv) {
 		puts ("Failed close input file");
 		exit (EXIT_FAILURE);
 	}
-	puts (str);
+	//puts (str);
 	char* code_str = huffman (str, decode_or_encode);
 
 	if ((fp = fopen (path_out, "w+")) == NULL) {
@@ -80,10 +80,10 @@ char* huffman (char* str, char* decode_or_encode) {
 	char* result = "\0";
 
 	if (strcmp (decode_or_encode, "encode") == 0) {
-		result = encode (str, result);
+		result = encode (str);
 	}
 	else {
-		decode (str, result);
+		decode (str);
 	}
 	return result;
 }

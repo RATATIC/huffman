@@ -35,7 +35,17 @@ struct char_code {
 	char c;
 };
 
-char* encode (char* str, char* result) {
+void print_bits (char n) {
+    char* bits = "";
+
+    while (n > 0) {
+        asprintf (&bits, "%d%s", (n & 1), bits);
+        n = n >> 1;
+    }
+    printf ("%s\n", bits);
+}
+
+char* encode (char* str) {
 	struct List_node* list = char_counting (str);
 	struct List_node* pl = list;
 
@@ -62,34 +72,58 @@ char* encode (char* str, char* result) {
 	for (int i = 0; i < size_char_code; i++) {
 		printf ("%c - %s\n", str_code[i].c, str_code[i].code);
 	}
-
-	wrie_in_char_code (str_code, size_char_code);
+	char* string = "\0";
 
 	for (int i = 0; i < strlen (str); i++) {
 		for (int j = 0; j < size_char_code; j++) {
 			if (str[i] == str_code[j].c) {
-				asprintf (&result, "%s%s", result, str_code[j].code);
+				asprintf (&string, "%s%s", string, str_code[j].code);
 			}
 		}
 	}
+	char* result = "\0";
+	char c = 0;
+
+	for (int i = 0, j = 1; i < strlen (string); i++) {
+		if (string[i] == '0')
+			c &= ~(1 << (8 - j));
+		else{
+			c |= (1 << (8 - j));
+		}
+
+		if (j == 8) {
+			//print_bits (c);
+			asprintf (&result, "%s%c", result, c);
+			j = 0;
+			c = 0;
+		}
+		j++;
+	}
+
+	printf ("%s\n", result);
+
+	write_in_char_code (str_code, size_char_code, strlen (string));
+
 	free_tree (&tree);
 	free_char_code (str_code, size_char_code);
 	free (cpy_list);
+	free (string);
 
 	return result;
 }
 
 // write code of char in file
-void wrie_in_char_code (struct char_code* str_code, int size_char_code) {
+void write_in_char_code (struct char_code* str_code, int size_char_code, int string_size) {
 	FILE* fp;
 
 	if ((fp = fopen ("code.txt", "w")) == NULL) {
 		puts ("Failed open code.txt");
 		exit (EXIT_FAILURE);
 	}
+	fprintf (fp, "%d\n", string_size);
 
 	for (int i = 0; i < size_char_code; i++)
-		fprintf(fp, "%c - %s\n", str_code[i].c, str_code[i].code);
+		fprintf(fp, "%c %s\n", str_code[i].c, str_code[i].code);
 
 	if (fclose (fp)) {
 		puts ("Failed close file");
