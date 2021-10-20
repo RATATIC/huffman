@@ -1,10 +1,13 @@
 all : main
 
-main : main.o encode.o decode.o
-	gcc -Wall main.o encode.o decode.o -o main
+main : main.o libhuffmancompress.a
+	gcc -Wall main.o libhuffmancompress.a -o main
 
 main.o : main.c
 	gcc -c main.c
+	
+libhuffmancompress.a : encode.o decode.o
+	ar -r libhuffmancompress.a encode.o decode.o
 
 encode.o : encode.c
 	gcc -c encode.c

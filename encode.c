@@ -20,6 +20,8 @@
 
 #include "head_encode.h"
 
+#define CHAR_SIZE 8
+
 struct List_node {
 	char c;
 	int count;
@@ -34,16 +36,6 @@ struct char_code {
 	char* code;
 	char c;
 };
-
-void print_bits (char n) {
-    char* bits = "";
-
-    while (n > 0) {
-        asprintf (&bits, "%d%s", (n & 1), bits);
-        n = n >> 1;
-    }
-    printf ("%s\n", bits);
-}
 
 char* encode (char* str) {
 	struct List_node* list = char_counting (str);
@@ -81,26 +73,26 @@ char* encode (char* str) {
 			}
 		}
 	}
+	puts (string);
+
 	char* result = "\0";
 	char c = 0;
 
 	for (int i = 0, j = 1; i < strlen (string); i++) {
 		if (string[i] == '0')
-			c &= ~(1 << (8 - j));
+			c &= ~(1 << (CHAR_SIZE - j));
 		else{
-			c |= (1 << (8 - j));
+			c |= (1 << (CHAR_SIZE - j));
 		}
 
 		if (j == 8) {
-			//print_bits (c);
 			asprintf (&result, "%s%c", result, c);
 			j = 0;
 			c = 0;
 		}
 		j++;
 	}
-
-	printf ("%s\n", result);
+	asprintf (&result, "%s%c", result, c);
 
 	write_in_char_code (str_code, size_char_code, strlen (string));
 

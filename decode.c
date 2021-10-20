@@ -20,7 +20,7 @@
 
 #include "head_decode.h"
 
-#define READ_SIZE 32
+#define READ_SIZE 1024
 #define CHAR_SIZE 8
 
 struct char_code {
@@ -28,7 +28,7 @@ struct char_code {
 	char c;
 };
 
-void decode (char* str) {
+char* decode (char* str) {
 	int code_size, size_char_code;
 	struct char_code* str_code = read_code_tree (&code_size, &size_char_code);
 
@@ -41,33 +41,35 @@ void decode (char* str) {
 			j = 0;
 		j++;
 	}
-	puts (string);
-	
 	char* result = "\0";
 	char* code = "\0";
 
 	for (int i = 0; i < strlen (string); i++) {
 		asprintf (&code, "%s%c", code, string[i]);
 		for (int j = 0; j < size_char_code; j++) {
-			puts (code);
-
 			if (strcmp (code, str_code[j].code) == 0) {
 				asprintf (&result, "%s%c", result, str_code[j].c);
 				code = "\0";
 			}
 		}
 	}
-	puts (result);
-
 	free_char_code_decode (&str_code, size_char_code);
+	free (string);
+
+	return result;
 }
 
+// read code.txt and create char_code
 struct char_code* read_code_tree (int* code_size, int* size_char_code) {
 	FILE* fp;
 	char c;
 	char string[READ_SIZE];
 
 	struct char_code* str_code = (struct char_code*)malloc (sizeof (struct char_code));
+	if (str_code == NULL) {
+		puts ("FAiled alloc memory str_code read_code_tree");
+		exit (EXIT_FAILURE);
+	}
 
 	if ((fp = fopen ("code.txt", "r")) == NULL) {
 		puts ("Failed open code file");
@@ -86,6 +88,11 @@ struct char_code* read_code_tree (int* code_size, int* size_char_code) {
 		}
 		else {
 			str_code = realloc (str_code, sizeof (struct char_code) * ((*size_char_code) + 1));
+			
+			if (str_code == NULL) {
+				puts ("Failed realloc memory for str_code");
+				exit (EXIT_FAILURE);
+			}
 			str_code[(*size_char_code)].c = c;
 			str_code[(*size_char_code)].code = strdup (string);
 		}

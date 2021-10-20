@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+// choose to compress data or decompress 
 char* huffman (char* str, char* decode_or_encode);
 
+// compress data 
 char* encode (char* str);
 
-void decode (char* str);
+// decompress data
+char* decode (char* str);
